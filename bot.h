@@ -13,7 +13,7 @@ public:
 		speed = 10;
 		size = blockSize / 2;
 		shape.setRadius(size);
-		// задаём фигуре зелёный цвет
+		// Г§Г Г¤Г ВёГ¬ ГґГЁГЈГіГ°ГҐ Г§ГҐГ«ВёГ­Г»Г© Г¶ГўГҐГІ
 		shape.setFillColor(sf::Color(100, 250, 50));
 	}
 	void SetCoord(int xx, int yy)
