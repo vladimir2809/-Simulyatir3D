@@ -10,8 +10,9 @@ public:
 	Bot()
 	{
 
-		speed = 10;
-		size = blockSize / 2;
+		speed = 5;
+		//size = blockSize / 2;
+		size = 5;
 		shape.setRadius(size);
 		// задаём фигуре зелёный цвет
 		shape.setFillColor(sf::Color(100, 250, 50));

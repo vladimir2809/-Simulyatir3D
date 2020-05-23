@@ -48,7 +48,7 @@ public:
 		Type type;
 	};
 	DataLine dataLine[quantityBlock * 4];// массив данных о стенах
-	DataLine dataLineBot[2];
+	DataLine dataLineBot[4];
 	Data data[amountLines];// массив линий просмотра
 	Blocks blocks;
 	Bot bot;
@@ -84,10 +84,17 @@ public:
 	void BotToLine(Bot &bot1)
 	{
 		bot = bot1;
-		dataLineBot[0].begin = Vector2f(bot.x + bot.size, bot.y);
-		dataLineBot[0].end = Vector2f(bot.x + bot.size, bot.y + bot.size * 2);
-		dataLineBot[1].begin = Vector2f(bot.x, bot.y + bot.size);
-		dataLineBot[1].end = Vector2f(bot.x + bot.size * 2, bot.y + bot.size);
+		dataLineBot[0].begin = Vector2f(bot.x, bot.y);
+		dataLineBot[0].end = Vector2f(bot.x + bot.size*2, bot.y );
+
+		dataLineBot[1].begin = Vector2f(bot.x + bot.size * 2, bot.y);
+		dataLineBot[1].end = Vector2f(bot.x + bot.size * 2, bot.y + bot.size*2);
+
+		dataLineBot[2].begin = Vector2f(bot.x , bot.y+bot.size*2);
+		dataLineBot[2].end = Vector2f(bot.x + bot.size * 2, bot.y+bot.size*2);
+
+		dataLineBot[3].begin = Vector2f(bot.x, bot.y);
+		dataLineBot[3].end = Vector2f(bot.x , bot.y + bot.size * 2);
 	}
 	Player(Blocks &blos)
 	{
@@ -217,33 +224,7 @@ public:
 			data[i].acrossPoint = Vector2f(
 				(float)(MaxDistance   * sin(dir + st) + point.x),
 				(float)(MaxDistance * cos(dir + st) + point.y));
-			for (int j = 0; j < 2; j++)
-			{
-				if (IsCrossing(point.x, point.y, data[i].acrossPoint.x, data[i].acrossPoint.y,
-					dataLineBot[j].begin.x, dataLineBot[j].begin.y, dataLineBot[j].end.x, dataLineBot[j].end.y))
-				{
-					data[i].acrossPoint = GetCrossVector(point, data[i].acrossPoint, dataLineBot[j].begin, dataLineBot[j].end);
-					data[i].type = BOT;
-					if (reyBotCenter == false)
-						if (distance(data[i].acrossPoint.x, data[i].acrossPoint.y,
-							dataLineBot[j].begin.x+bot.size, dataLineBot[j].begin.y + bot.size) > bot.size - 0.02 &&
-							distance(data[i].acrossPoint.x, data[i].acrossPoint.y, 
-							dataLineBot[j].end.x - bot.size, dataLineBot[j].end.y - bot.size) < bot.size + 0.02)
-						{
-							data[i].type = BOTCENTER;
-							reyBotCenter = true;
-
-						}
-
-				}
-				data[i].dist = distance(point.x, point.y, data[i].acrossPoint.x, data[i].acrossPoint.y);
-				// умножаем на косинус если точка пересечения не больше максимальной
-				if (data[i].dist < MaxDistance - 0.1)
-				{
-					//data[i].dist *= cos(st);
-				}
-
-			}
+		
 			for (int j = 0; j < quantityBlock * 4; j++)
 			{
 
@@ -276,6 +257,24 @@ public:
 				}
 
 			}
+			for (int j = 0; j < 4; j++)
+			{
+				if (IsCrossing(point.x, point.y, data[i].acrossPoint.x, data[i].acrossPoint.y,
+					dataLineBot[j].begin.x, dataLineBot[j].begin.y, dataLineBot[j].end.x, dataLineBot[j].end.y))
+				{
+					Data oneData;
+					oneData.acrossPoint = GetCrossVector(point, data[i].acrossPoint, dataLineBot[j].begin, dataLineBot[j].end);
+					data[i].acrossPoint = oneData.acrossPoint;
+					data[i].type = BOT;
+				}
+				data[i].dist = distance(point.x, point.y, data[i].acrossPoint.x, data[i].acrossPoint.y);
+				// умножаем на косинус если точка пересечения не больше максимальной
+				if (data[i].dist < MaxDistance - 0.1)
+				{
+					data[i].dist *= cos(st);
+				}
+
+			}
 
 			st += StepOfField;// текушему прибавляем шаг
 		}
@@ -283,7 +282,7 @@ public:
 
 
 	}
-	void Draw(RenderWindow &window)// функция отрисовки
+	void Draw(RenderWindow& window)// функция отрисовки
 	{
 		// рисуем верхний фон
 		RectangleShape rectangle(Vector2f(screenWidth, screenHeigth / 2));
@@ -301,23 +300,10 @@ public:
 		for (int i = 0; i < amountLines; i++)
 		{
 			float dist = data[i].dist;// *cos((pi));
-			if (data[i].type == BOTCENTER)
-			{
-				float sizeShape = 3000;
-				shape.setPosition((int)(screenWidth / (float)amountLines * (amountLines - i))- 1 / dist * sizeShape,
-									screenHeigth / 2 - 1 / dist * sizeShape);
-				shape.setRadius(1 / dist * sizeShape);
-				window.draw(shape);
-			}
-			if (data[i].type == BOT || data[i].type == BOTCENTER)
+			if (dist < MaxDistance - 0.1)
 			{
 
-			}
-			//if (data[i].type != BOT &&  data[i].type!=BOTCENTER)
-			if (dist< MaxDistance - 0.1)
-			{
-
-				float lineHeight = dist*0.5;
+				float lineHeight = dist * 0.5;
 				if (data[i].color == Color::Green)// рисуем серые линии если это не край отрезка стены
 				{
 					DrawLine((int)(screenWidth / (float)amountLines * (amountLines - i)), screenHeigth / 2 - 1000 / lineHeight,
@@ -332,7 +318,13 @@ public:
 				}
 
 			}
-
+			if (data[i].type == BOT)
+			{
+				float lineHeight = dist * 0.5;
+				DrawLine((int)(screenWidth / (float)amountLines * (amountLines - i)), screenHeigth / 2 - 1000 / lineHeight,
+					(int)(screenWidth / (float)amountLines * (amountLines - i)), screenHeigth / 2 + 1000 / lineHeight,
+					Color::Red, window);
+			}
 			if (i <= amountLines / 2 + 15 && i >= amountLines / 2 - 15)
 			{
 				// рисуем линии на карте навправляния куда смотрит игрок
@@ -354,21 +346,20 @@ public:
 		float realDir = dir;
 		realDir = realDir * 180 / pi;
 
-		line1.y = 120 * cos(pi*(realDir + 90) / (float)180) + point.y;
-		line1.x = 120 * sin(pi*(realDir + 90) / (float)180) + point.x;
+		line1.y = 120 * cos(pi * (realDir + 90) / (float)180) + point.y;
+		line1.x = 120 * sin(pi * (realDir + 90) / (float)180) + point.x;
 
-		line2.y = 120 * cos(pi*(realDir - 90) / (float)180) + point.y;
-		line2.x = 120 * sin(pi*(realDir - 90) / (float)180) + point.x;
+		line2.y = 120 * cos(pi * (realDir - 90) / (float)180) + point.y;
+		line2.x = 120 * sin(pi * (realDir - 90) / (float)180) + point.x;
 		DrawLine(point.x / 4, point.y / 4, line1.x / 4, line1.y / 4, Color::Green, window);
 		DrawLine(point.x / 4, point.y / 4, line2.x / 4, line2.y / 4, Color::Green, window);
-		/*DrawLine(dataLineBot[0].begin.x/4, dataLineBot[0].begin.y/4, dataLineBot[0].end.x/4, dataLineBot[0].end.y/4, Color::Blue,window);
-		DrawLine(dataLineBot[1].begin.x/4, dataLineBot[1].begin.y/4, dataLineBot[1].end.x/4, dataLineBot[1].end.y/4, Color::Blue, window);*/
-
 	}
 	void DrawLineBot(RenderWindow &window)
 	{
 		DrawLine(dataLineBot[0].begin.x / 4, dataLineBot[0].begin.y / 4, dataLineBot[0].end.x / 4, dataLineBot[0].end.y / 4, Color::Blue, window);
 		DrawLine(dataLineBot[1].begin.x / 4, dataLineBot[1].begin.y / 4, dataLineBot[1].end.x / 4, dataLineBot[1].end.y / 4, Color::Blue, window);
+		DrawLine(dataLineBot[2].begin.x / 4, dataLineBot[2].begin.y / 4, dataLineBot[2].end.x / 4, dataLineBot[2].end.y / 4, Color::Blue, window);
+		DrawLine(dataLineBot[3].begin.x / 4, dataLineBot[3].begin.y / 4, dataLineBot[3].end.x / 4, dataLineBot[3].end.y / 4, Color::Blue, window);
 	}
 }
 ;
